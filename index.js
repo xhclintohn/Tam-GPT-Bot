@@ -1,9 +1,10 @@
 const { default: makeWASocket, useMultiFileAuthState, fetchLatestWaWebVersion, makeCacheableSignalKeyStore } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const qrcode = require('qrcode-terminal');
+const fs = require('fs');
+const path = require('path');
 
 let client = null;
-const sessionName = 'tamtech-gpt-session';
 
 class TamTechBot {
     constructor() {
@@ -22,10 +23,18 @@ class TamTechBot {
     async connectToWhatsApp() {
         try {
             const { version } = await fetchLatestWaWebVersion();
-            const { state, saveCreds } = await useMultiFileAuthState(sessionName);
+            
+            // Get session from Heroku env var
+            const sessionBase64 = process.env.SESSION_ID;
+            if (!sessionBase64) {
+                throw new Error('SESSION_ID not found in environment variables');
+            }
 
+            // Decode base64 session
+            const sessionData = JSON.parse(Buffer.from(sessionBase64, 'base64').toString());
+            
             client = makeWASocket({
-                printQRInTerminal: true,
+                printQRInTerminal: false,
                 syncFullHistory: false,
                 markOnlineOnConnect: false,
                 connectTimeoutMs: 60000,
@@ -36,12 +45,11 @@ class TamTechBot {
                 browser: ['Ubuntu', 'Chrome', '20.0.04'],
                 logger: pino({ level: 'fatal' }),
                 auth: {
-                    creds: state.creds,
-                    keys: makeCacheableSignalKeyStore(state.keys, pino().child({ level: 'fatal', stream: 'store' })),
+                    creds: sessionData,
+                    keys: makeCacheableSignalKeyStore({}, pino().child({ level: 'fatal', stream: 'store' })),
                 }
             });
 
-            client.ev.on('creds.update', saveCreds);
             client.ev.on('connection.update', this.handleConnectionUpdate);
             client.ev.on('messages.upsert', this.handleMessagesUpsert);
 
@@ -52,19 +60,16 @@ class TamTechBot {
     }
 
     handleConnectionUpdate = (update) => {
-        const { connection, lastDisconnect, qr } = update;
-        
-        if (qr) {
-            qrcode.generate(qr, { small: true });
-        }
+        const { connection, lastDisconnect } = update;
 
         if (connection === 'close') {
             const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== 401;
+            console.log('Connection closed. Reconnecting:', shouldReconnect);
             if (shouldReconnect) {
                 setTimeout(() => this.connectToWhatsApp(), 5000);
             }
         } else if (connection === 'open') {
-            console.log('✅ TamTech-GPT Bot Connected');
+            console.log('✅ TamTech-GPT Bot Connected to WhatsApp');
         }
     }
 
@@ -72,7 +77,7 @@ class TamTechBot {
         const msg = messages[0];
         if (!msg.message || msg.key.remoteJid === 'status@broadcast' || msg.key.fromMe) return;
 
-        // Check if it's a group (ignore groups)
+        // Ignore groups - only work in DMs
         if (msg.key.remoteJid.endsWith('@g.us')) return;
 
         try {
@@ -121,7 +126,7 @@ class TamTechBot {
 // Start bot
 new TamTechBot();
 
-// Keep alive
+// Keep alive for Heroku
 setInterval(() => {
     if (client) {
         client.sendPresenceUpdate('available');
