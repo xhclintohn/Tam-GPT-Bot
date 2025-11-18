@@ -7,13 +7,14 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "@whiskeysockets/baileys": "latest",
+    "@whiskeysockets/baileys": "github:kiuur/baileys",
     "axios": "^1.6.0",
     "form-data": "^4.0.0",
     "node-fetch": "^2.6.7",
-    "express": "latest",
     "pino": "^8.15.0",
-    "qrcode-terminal": "^0.12.0"
+    "qrcode-terminal": "^0.12.0",
+    "express": "^4.18.0",
+    "@hapi/boom": "^10.0.0"
   },
   "engines": {
     "node": ">=16.0.0"
