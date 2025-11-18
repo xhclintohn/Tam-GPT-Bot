@@ -7,7 +7,7 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "@whiskeysockets/baileys": "github:kiuur/baileys",
+    "@whiskeysockets/baileys": "latest",
     "axios": "^1.6.0",
     "form-data": "^4.0.0",
     "node-fetch": "^2.6.7",
