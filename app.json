@@ -1,0 +1,24 @@
+{
+  "name": "TamTech-GPT Bot",
+  "description": "WhatsApp AI Bot with GPT-4 and Vision capabilities",
+  "repository": "https://github.com/your-username/your-repo-name",
+  "logo": "https://raw.githubusercontent.com/kiuur/baileys/master/logo.png",
+  "keywords": ["whatsapp", "bot", "ai", "gpt", "toxic"],
+  "env": {
+    "SESSION_ID": {
+      "description": "Your base64 encoded session data",
+      "required": true
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    },
+    {
+      "url": "https://github.com/clhuang/heroku-buildpack-webp-binaries.git"
+    },
+    {
+      "url": "https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest"
+    }
+  ]
+}
